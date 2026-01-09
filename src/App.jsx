@@ -3,7 +3,8 @@ import {
   BookOpen, Users, Calculator, FileText, Printer, 
   Save, Plus, Trash2, Menu, X, BrainCircuit,
   ClipboardPaste, Award, School, Check, XCircle, Sparkles, ChevronDown,
-  Settings, ArrowLeft, Calendar, MapPin, Target, Edit3, Eye, EyeOff, Info, Download
+  Settings, ArrowLeft, Calendar, MapPin, Target, Edit3, Eye, EyeOff, Info, Download, 
+  Copy, CheckSquare, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 // --- DATASET SIMULASI AI (TP & ATP) ---
@@ -175,7 +176,7 @@ const Toast = ({ message, type, onClose }) => (
 // --- KOMPONEN UTAMA ---
 
 export default function App() {
-  const [appState, setAppState] = useState('splash'); // splash, setup, dashboard
+  const [appState, setAppState] = useState('splash'); 
   const [schoolData, setSchoolData] = useState({
     instansi: '',
     guru: '',
@@ -184,9 +185,9 @@ export default function App() {
     tahunAjar: '2025/2026',
     level: 'SD',
     mapels: [],
-    kkm: 75, // Default KKM
-    tempat: 'Jakarta', // Default Tempat Rapor
-    tanggal: new Date().toISOString().split('T')[0] // Default Tanggal Hari Ini
+    kkm: 75,
+    tempat: 'Jakarta',
+    tanggal: new Date().toISOString().split('T')[0]
   });
   
   const [activeMapel, setActiveMapel] = useState('');
@@ -197,7 +198,7 @@ export default function App() {
   const [scores, setScores] = useState({}); 
   const [view, setView] = useState('tujuan'); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [toast, setToast] = useState(null); // { message, type }
+  const [toast, setToast] = useState(null); 
 
   // --- LOGIKA SPLASH SCREEN ---
   useEffect(() => {
@@ -214,6 +215,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // Safety check: jika mapel ada tapi activeMapel kosong
     if (schoolData.mapels && schoolData.mapels.length > 0 && !activeMapel) {
       setActiveMapel(schoolData.mapels[0]);
     }
@@ -235,21 +237,26 @@ export default function App() {
   };
 
   const loadDataFromStorage = () => {
-    const sSchool = JSON.parse(localStorage.getItem('schoolData') || '{}');
-    const sStudents = JSON.parse(localStorage.getItem('students') || '[]');
-    const sObjectives = JSON.parse(localStorage.getItem('objectives') || '[]');
-    const sScores = JSON.parse(localStorage.getItem('scores') || '{}');
-    
-    setSchoolData({
-      kkm: 75,
-      tempat: 'Jakarta',
-      tanggal: new Date().toISOString().split('T')[0],
-      ...sSchool
-    });
-    setStudents(sStudents);
-    setObjectives(sObjectives);
-    setScores(sScores);
-    if(sSchool.mapels && sSchool.mapels.length > 0) setActiveMapel(sSchool.mapels[0]);
+    try {
+      const sSchool = JSON.parse(localStorage.getItem('schoolData') || '{}');
+      const sStudents = JSON.parse(localStorage.getItem('students') || '[]');
+      const sObjectives = JSON.parse(localStorage.getItem('objectives') || '[]');
+      const sScores = JSON.parse(localStorage.getItem('scores') || '{}');
+      
+      setSchoolData({
+        kkm: 75,
+        tempat: 'Jakarta',
+        tanggal: new Date().toISOString().split('T')[0],
+        ...sSchool
+      });
+      setStudents(sStudents);
+      setObjectives(sObjectives);
+      setScores(sScores);
+      if(sSchool.mapels && sSchool.mapels.length > 0) setActiveMapel(sSchool.mapels[0]);
+    } catch (e) {
+      console.error("Gagal memuat data", e);
+      localStorage.clear(); // Reset if corrupt
+    }
   };
 
   const handleResetApp = () => {
@@ -259,7 +266,6 @@ export default function App() {
     }
   };
 
-  // --- RENDER CONDITION ---
   if (appState === 'splash') return <SplashScreen />;
   if (appState === 'setup') return (
     <SetupForm 
@@ -355,7 +361,11 @@ export default function App() {
                   onChange={(e) => setActiveMapel(e.target.value)}
                   className="appearance-none bg-white border border-emerald-500 text-emerald-900 py-2 pl-4 pr-10 rounded-lg shadow-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 hover:bg-emerald-50 cursor-pointer"
                 >
-                  {schoolData.mapels.map((m, idx) => <option key={idx} value={m}>{m}</option>)}
+                  {schoolData.mapels.length > 0 ? (
+                    schoolData.mapels.map((m, idx) => <option key={idx} value={m}>{m}</option>)
+                  ) : (
+                    <option value="">Belum ada mapel</option>
+                  )}
                 </select>
                 <ChevronDown size={16} className="absolute right-3 top-3 text-emerald-600 pointer-events-none"/>
               </div>
@@ -367,10 +377,20 @@ export default function App() {
           </div>
         </header>
 
-        {view === 'tujuan' && <ObjectivesManager objectives={objectives} setObjectives={setObjectives} activeMapel={activeMapel} level={schoolData.level} />}
-        {view === 'siswa' && <StudentManager students={students} setStudents={setStudents} />}
-        {view === 'nilai' && <GradingSystem students={students} objectives={objectives} scores={scores} setScores={setScores} activeMapel={activeMapel} schoolData={schoolData} setSchoolData={setSchoolData} />}
-        {view === 'rapor' && <ReportAnalysis students={students} objectives={objectives} scores={scores} schoolData={schoolData} setSchoolData={setSchoolData} activeMapel={activeMapel} />}
+        {schoolData.mapels.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed border-gray-300 rounded-xl">
+             <BookOpen size={48} className="text-gray-300 mb-4"/>
+             <p className="text-gray-500 mb-4">Anda belum menambahkan Mata Pelajaran.</p>
+             <button onClick={() => setAppState('setup')} className="bg-emerald-600 text-white px-4 py-2 rounded font-bold">Tambah Mapel di Setup</button>
+          </div>
+        ) : (
+          <>
+            {view === 'tujuan' && <ObjectivesManager objectives={objectives} setObjectives={setObjectives} activeMapel={activeMapel} level={schoolData.level} />}
+            {view === 'siswa' && <StudentManager students={students} setStudents={setStudents} />}
+            {view === 'nilai' && <GradingSystem students={students} objectives={objectives} scores={scores} setScores={setScores} activeMapel={activeMapel} schoolData={schoolData} setSchoolData={setSchoolData} />}
+            {view === 'rapor' && <ReportAnalysis students={students} objectives={objectives} scores={scores} schoolData={schoolData} setSchoolData={setSchoolData} activeMapel={activeMapel} />}
+          </>
+        )}
       </main>
       
       {/* Mobile Save Button */}
@@ -539,7 +559,6 @@ function ObjectivesManager({ objectives, setObjectives, activeMapel, level }) {
     const finalType = type || newObj.type;
     if (!finalDesc) return;
     
-    // Perbaikan: Hitung index berdasarkan state terbaru di filter
     const currentTypeCount = currentMapelObjectives.filter(o => o.type === finalType).length;
     const code = finalType === 'formatif' ? `TF.${currentTypeCount + 1}` : `TS.${currentTypeCount + 1}`;
     
@@ -569,7 +588,6 @@ function ObjectivesManager({ objectives, setObjectives, activeMapel, level }) {
       else setSelectedRecs([...selectedRecs, rec]);
     };
 
-    // PERBAIKAN: Fungsi Bulk Add agar kode (TF.1, TF.2) berurutan dan tidak ganda
     const handleBulkAdd = () => {
        const existingCount = objectives.filter(o => o.mapel === activeMapel && o.type === newObj.type).length;
        const newItems = selectedRecs.map((rec, index) => ({
@@ -671,7 +689,6 @@ function StudentManager({ students, setStudents }) {
         <Users className="text-emerald-600" /> Manajemen Data Siswa
       </h3>
 
-      {/* PERBAIKAN: Layout Grid 1:2 agar Import Excel lebih besar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 items-start">
         
         {/* Card Input Manual (1 Kolom) */}
@@ -764,16 +781,63 @@ function StudentManager({ students, setStudents }) {
 function GradingSystem({ students, objectives, scores, setScores, activeMapel, schoolData, setSchoolData }) {
   const [selectedType, setSelectedType] = useState('formatif');
   const [showFullDesc, setShowFullDesc] = useState(false);
-  const [gradingModalStudent, setGradingModalStudent] = useState(null); // State untuk Popup Modal
-  const [tpModalInfo, setTpModalInfo] = useState(null); // State untuk Pop-up TP Detail
+  const [gradingModalStudent, setGradingModalStudent] = useState(null); 
+  const [tpModalInfo, setTpModalInfo] = useState(null); 
   
   const filteredObjectives = objectives.filter(o => o.mapel === activeMapel && o.type === selectedType);
 
-  const handleScoreChange = (studentId, objId, val) => {
+  const handleScoreChange = (key, val) => {
+    setScores(prev => ({ ...prev, [key]: val }));
+  };
+
+  const handleNumericScore = (studentId, objId, val) => {
     let numVal = val === '' ? '' : parseInt(val);
     if (numVal > 100) numVal = 100;
     if (numVal < 0) numVal = 0;
-    setScores(prev => ({ ...prev, [`${studentId}_${objId}`]: numVal }));
+    handleScoreChange(`${studentId}_${objId}`, numVal);
+  }
+
+  // Toggle Logic for Sumatif TPs
+  const handleToggleSumatif = (studentId, objId) => {
+    setScores(prev => {
+      const key = `${studentId}_${objId}`;
+      const current = prev[key];
+      const newVal = (current === undefined || current === 'TUNTAS') ? 'BELUM' : 'TUNTAS';
+      return { ...prev, [key]: newVal };
+    });
+  };
+
+  const handleExamScoreChange = (studentId, val) => {
+    let numVal = val === '' ? '' : parseInt(val);
+    if (numVal > 100) numVal = 100;
+    if (numVal < 0) numVal = 0;
+    handleScoreChange(`EXAM_${studentId}_${activeMapel}`, numVal);
+  };
+
+  const handleBulkFill = (objId, value) => {
+    const newScores = { ...scores };
+    const numValue = parseInt(value);
+    if (isNaN(numValue) || numValue < 0 || numValue > 100) return;
+    students.forEach(student => { newScores[`${student.id}_${objId}`] = numValue; });
+    setScores(newScores);
+    setTpModalInfo(null); 
+  };
+
+  const handlePasteScores = (objId, textData) => {
+    if (!textData) return;
+    const lines = textData.trim().split(/\n/);
+    const newScores = { ...scores };
+    lines.forEach((line, index) => {
+      if (index < students.length) {
+        const student = students[index];
+        const val = parseInt(line.trim());
+        if (!isNaN(val) && val >= 0 && val <= 100) {
+          newScores[`${student.id}_${objId}`] = val;
+        }
+      }
+    });
+    setScores(newScores);
+    setTpModalInfo(null);
   };
 
   // --- KOMPONEN POPUP MODAL INPUT ---
@@ -795,7 +859,10 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
              <div className="space-y-4">
                 {filteredObjectives.map(obj => {
                    const score = scores[`${gradingModalStudent.id}_${obj.id}`];
-                   const isBelowKKM = score !== undefined && score !== '' && score < (schoolData.kkm || 75);
+                   const isSumatif = obj.type === 'sumatif';
+                   const isBelowKKM = !isSumatif && score !== undefined && score !== '' && score < (schoolData.kkm || 75);
+                   const isBelumTuntas = isSumatif && score === 'BELUM';
+
                    return (
                      <div key={obj.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center gap-4">
                         <div className="flex-1">
@@ -804,16 +871,26 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
                            </span>
                            <p className="text-slate-800 font-medium leading-snug">{obj.desc}</p>
                         </div>
-                        <input 
-                          type="number"
-                          autoFocus={false}
-                          className={`w-20 p-3 text-center text-lg font-bold border-2 rounded-lg focus:ring-4 focus:ring-emerald-100 outline-none transition-all ${
-                             isBelowKKM ? 'border-red-400 text-red-600 bg-red-50' : 'border-emerald-200 text-emerald-800'
-                          }`}
-                          value={score !== undefined ? score : ''}
-                          placeholder="0"
-                          onChange={(e) => handleScoreChange(gradingModalStudent.id, obj.id, e.target.value)}
-                        />
+                        {isSumatif ? (
+                          <button 
+                            onClick={() => handleToggleSumatif(gradingModalStudent.id, obj.id)}
+                            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2 ${isBelumTuntas ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-emerald-100 text-emerald-700 border border-emerald-300'}`}
+                          >
+                            {isBelumTuntas ? <ToggleLeft size={20}/> : <ToggleRight size={20}/>}
+                            {isBelumTuntas ? 'Belum Tuntas' : 'Tuntas'}
+                          </button>
+                        ) : (
+                          <input 
+                            type="number"
+                            autoFocus={false}
+                            className={`w-20 p-3 text-center text-lg font-bold border-2 rounded-lg focus:ring-4 focus:ring-emerald-100 outline-none transition-all ${
+                               isBelowKKM ? 'border-red-400 text-red-600 bg-red-50' : 'border-emerald-200 text-emerald-800'
+                            }`}
+                            value={score !== undefined ? score : ''}
+                            placeholder="0"
+                            onChange={(e) => handleNumericScore(gradingModalStudent.id, obj.id, e.target.value)}
+                          />
+                        )}
                      </div>
                    );
                 })}
@@ -830,30 +907,84 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
 
   // --- POPUP INFO TP ---
   const TPInfoModal = () => {
+    const [bulkValue, setBulkValue] = useState('');
+    const [pasteValue, setPasteValue] = useState('');
+    const [mode, setMode] = useState('info'); 
+
     if (!tpModalInfo) return null;
+
     return (
       <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4 animate-fadeIn" onClick={() => setTpModalInfo(null)}>
         <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full relative border-t-4 border-emerald-500" onClick={e => e.stopPropagation()}>
           <button onClick={() => setTpModalInfo(null)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"><X size={20}/></button>
-          <div className="text-center">
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 ${tpModalInfo.type === 'formatif' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
-              {tpModalInfo.code}
-            </span>
-            <h4 className="font-bold text-lg text-slate-800 mb-2">Detail TP</h4>
-            <p className="text-slate-600 leading-relaxed">{tpModalInfo.desc}</p>
-          </div>
+          
+          {mode === 'info' && (
+            <div className="text-center">
+              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 ${tpModalInfo.type === 'formatif' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                {tpModalInfo.code}
+              </span>
+              <h4 className="font-bold text-lg text-slate-800 mb-2">Detail TP</h4>
+              <p className="text-slate-600 leading-relaxed mb-6">{tpModalInfo.desc}</p>
+              
+              {tpModalInfo.type === 'formatif' && (
+                <div className="border-t pt-4">
+                  <p className="text-xs text-slate-400 font-bold uppercase mb-2">Aksi Cepat</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => setMode('bulk')} className="flex flex-col items-center gap-1 p-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 border">
+                      <CheckSquare size={16}/> Isi Semua (Bulk)
+                    </button>
+                    <button onClick={() => setMode('paste')} className="flex flex-col items-center gap-1 p-2 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-medium text-slate-700 border">
+                      <ClipboardPaste size={16}/> Paste Excel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {mode === 'bulk' && (
+            <div>
+              <div className="flex items-center gap-2 mb-3 cursor-pointer text-slate-500 hover:text-slate-800" onClick={() => setMode('info')}>
+                <ArrowLeft size={16}/> <span className="text-xs font-bold">Kembali</span>
+              </div>
+              <h4 className="font-bold text-slate-800 mb-2">Isi Otomatis</h4>
+              <input 
+                type="number" 
+                className="w-full p-2 border rounded mb-3 text-center font-bold text-lg"
+                placeholder="0-100"
+                value={bulkValue}
+                onChange={e => setBulkValue(e.target.value)}
+              />
+              <button onClick={() => handleBulkFill(tpModalInfo.id, bulkValue)} className="w-full bg-emerald-600 text-white py-2 rounded font-bold hover:bg-emerald-700">Terapkan</button>
+            </div>
+          )}
+
+          {mode === 'paste' && (
+            <div>
+              <div className="flex items-center gap-2 mb-3 cursor-pointer text-slate-500 hover:text-slate-800" onClick={() => setMode('info')}>
+                <ArrowLeft size={16}/> <span className="text-xs font-bold">Kembali</span>
+              </div>
+              <h4 className="font-bold text-slate-800 mb-2">Paste dari Excel</h4>
+              <textarea 
+                className="w-full p-2 border rounded mb-3 text-xs h-32 font-mono"
+                placeholder="Paste nilai disini..."
+                value={pasteValue}
+                onChange={e => setPasteValue(e.target.value)}
+              />
+              <button onClick={() => handlePasteScores(tpModalInfo.id, pasteValue)} className="w-full bg-emerald-600 text-white py-2 rounded font-bold hover:bg-emerald-700">Proses Paste</button>
+            </div>
+          )}
+
         </div>
       </div>
     );
   };
 
   return (
-    // CHANGE: Container uses 75vh to ensure fit within most screens, with explicit border
     <div className="bg-white rounded-xl shadow-sm flex flex-col h-[70vh] md:h-[75vh] relative border border-gray-200">
       <GradingModal />
       <TPInfoModal />
 
-      {/* HEADER INPUT NILAI - LAYOUT DIPERBAIKI (Flex Wrap + Gap) */}
       <div className="p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4 shrink-0 bg-white z-40 relative rounded-t-xl">
         <div className="flex-1 min-w-[200px]">
            <h3 className="text-xl font-bold flex items-center gap-2">
@@ -862,9 +993,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
           <p className="text-xs text-slate-500 mt-1">Mapel: <span className="font-bold text-emerald-600">{activeMapel}</span></p>
         </div>
         
-        {/* Tombol-tombol di kanan */}
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-          {/* Input KKM */}
           <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-200 shadow-sm">
              <Target size={16} className="text-yellow-700"/>
              <span className="text-sm font-bold text-yellow-800">KKM:</span>
@@ -876,7 +1005,6 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
              />
           </div>
 
-          {/* Toggle Header View */}
           <button 
              onClick={() => setShowFullDesc(!showFullDesc)}
              className="flex items-center gap-2 text-slate-600 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium shadow-sm"
@@ -885,7 +1013,6 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
              {showFullDesc ? <EyeOff size={16}/> : <Eye size={16}/>}
           </button>
 
-          {/* Switcher Formatif/Sumatif */}
           <div className="flex bg-gray-100 p-1 rounded-lg">
             <button 
               className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${selectedType === 'formatif' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
@@ -903,20 +1030,25 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
         </div>
       </div>
 
-      {/* TABEL SCROLLABLE - Padding Bawah Ditambah */}
       <div className="flex-1 overflow-auto relative w-full bg-slate-50 rounded-b-xl scroll-smooth">
         <table className="w-full min-w-[600px] border-collapse">
           <thead className="sticky top-0 z-20 shadow-sm">
             <tr className="bg-gray-50 text-left border-b border-gray-200">
-              {/* Fix: Menggunakan min-w-[14rem] agar header Nama tidak terlalu kecil, serta memastikan width */}
               <th className="p-2 sticky left-0 bg-gray-50 border-r min-w-[14rem] w-56 z-30 font-bold text-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-xs uppercase tracking-wider">
                 Nama Siswa
               </th>
+              {selectedType === 'sumatif' && (
+                <th className="p-2 border-r bg-emerald-50 text-center min-w-[100px] align-top z-20">
+                   <div className="flex flex-col items-center pt-1">
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded mb-1">Nilai Ujian (Tes)</span>
+                   </div>
+                </th>
+              )}
               {filteredObjectives.map(obj => (
                 <th 
                   key={obj.id} 
                   className={`p-1 border-r text-center bg-gray-50 align-top transition-all cursor-pointer hover:bg-gray-100 ${showFullDesc ? 'min-w-[150px]' : 'min-w-[60px]'}`}
-                  onClick={() => setTpModalInfo(obj)} // Pop-up saat klik Header
+                  onClick={() => setTpModalInfo(obj)} 
                   title="Klik untuk lihat detail TP"
                 >
                   <div className="flex flex-col items-center group relative h-full justify-start pt-1">
@@ -937,7 +1069,6 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
           <tbody>
             {students.map((student, idx) => (
               <tr key={student.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                {/* Fix: Menggunakan div dalam td untuk Flex behavior yang benar dalam tabel */}
                 <td className="p-0 font-medium sticky left-0 bg-inherit border-r border-gray-200 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-slate-700 h-10 align-middle">
                   <div className="flex items-center justify-between w-56 px-2 h-full">
                     <span className="truncate w-[160px] text-xs" title={student.name}>{student.name}</span>
@@ -946,29 +1077,55 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
                     </button>
                   </div>
                 </td>
-                {filteredObjectives.map(obj => {
-                   const score = scores[`${student.id}_${obj.id}`];
-                   const isBelowKKM = score !== undefined && score !== '' && score < (schoolData.kkm || 75);
-                   return (
-                    <td key={obj.id} className="p-1 text-center border-r border-gray-100 h-10">
-                      <input 
+                {selectedType === 'sumatif' && (
+                  <td className="p-1 text-center border-r border-gray-100 h-10">
+                     <input 
                         type="number" 
                         min="0" max="100"
-                        className={`w-10 h-7 text-center border rounded focus:ring-1 focus:ring-emerald-500 outline-none transition-all font-bold text-xs ${
-                           isBelowKKM 
-                           ? 'text-red-600 bg-red-50 border-red-300' 
-                           : score ? 'text-slate-800 border-gray-300' : 'bg-gray-50 border-gray-200'
+                        className={`w-14 h-7 text-center border rounded focus:ring-1 focus:ring-emerald-500 outline-none transition-all font-bold text-xs bg-emerald-50 border-emerald-200 text-emerald-800`}
+                        value={scores[`EXAM_${student.id}_${activeMapel}`] !== undefined ? scores[`EXAM_${student.id}_${activeMapel}`] : ''}
+                        placeholder="-"
+                        onChange={(e) => handleExamScoreChange(student.id, e.target.value)}
+                      />
+                  </td>
+                )}
+                {filteredObjectives.map(obj => {
+                   const score = scores[`${student.id}_${obj.id}`];
+                   const isSumatif = obj.type === 'sumatif';
+                   const isBelowKKM = !isSumatif && score !== undefined && score !== '' && score < (schoolData.kkm || 75);
+                   const isBelumTuntas = isSumatif && score === 'BELUM';
+
+                   return (
+                    <td key={obj.id} className="p-1 text-center border-r border-gray-100 h-10 align-middle">
+                      {isSumatif ? (
+                        <button 
+                          onClick={() => handleToggleSumatif(student.id, obj.id)}
+                          className={`w-full h-8 flex items-center justify-center rounded transition-colors ${
+                            isBelumTuntas ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'
+                          }`}
+                          title={isBelumTuntas ? "Klik untuk ubah jadi Tuntas" : "Klik untuk ubah jadi Belum Tuntas"}
+                        >
+                          {isBelumTuntas ? <XCircle size={16}/> : <Check size={16}/>}
+                        </button>
+                      ) : (
+                        <input 
+                          type="number" 
+                          min="0" max="100"
+                          className={`w-10 h-7 text-center border rounded focus:ring-1 focus:ring-emerald-500 outline-none transition-all font-bold text-xs ${
+                             isBelowKKM 
+                             ? 'text-red-600 bg-red-50 border-red-300' 
+                             : score ? 'text-slate-800 border-gray-300' : 'bg-gray-50 border-gray-200'
                         }`}
                         value={score !== undefined ? score : ''}
                         placeholder="-"
-                        onChange={(e) => handleScoreChange(student.id, obj.id, e.target.value)}
+                        onChange={(e) => handleNumericScore(student.id, obj.id, e.target.value)}
                       />
+                      )}
                     </td>
                   );
                 })}
               </tr>
             ))}
-            {/* Spacer Row lebih tinggi agar data terakhir aman */}
             <tr className="h-32 bg-transparent pointer-events-none"><td colSpan={100}></td></tr>
           </tbody>
         </table>
@@ -979,105 +1136,105 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
 
 function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolData, activeMapel }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedId, setSelectedId] = useState('');
 
   const handlePrint = () => {
     window.print();
   };
 
-  const getTeacherNote = (studentId) => {
-    const relevantObjs = objectives.filter(o => o.mapel === activeMapel);
-    if (relevantObjs.length === 0) return "Belum ada data pembelajaran.";
+  const studentsToRender = selectedId === 'all' 
+    ? students 
+    : students.filter(s => s.id.toString() === selectedId);
 
-    let totalScore = 0;
-    let count = 0;
-    let belowKKM = [];
-    let excellent = [];
+  // Analysis function (reused logic)
+  const getAnalysisData = (studentId) => {
+    const formatifObjs = objectives.filter(o => o.mapel === activeMapel && o.type === 'formatif');
+    const sumatifObjs = objectives.filter(o => o.mapel === activeMapel && o.type === 'sumatif');
     const kkm = schoolData.kkm || 75;
 
-    relevantObjs.forEach(obj => {
+    // --- Formatif ---
+    let fTotal = 0, fCount = 0;
+    let fMaxVal = -1, fMaxObj = null;
+    let fBelowDescs = [];
+    let fExcellents = [];
+
+    formatifObjs.forEach(obj => {
       const val = scores[`${studentId}_${obj.id}`];
       if (val !== undefined && val !== "") {
         const num = parseInt(val);
-        totalScore += num;
-        count++;
-        if (num < kkm) belowKKM.push(obj.desc);
-        if (num >= 90) excellent.push(obj.desc);
+        fTotal += num;
+        fCount++;
+        if (num > fMaxVal) { fMaxVal = num; fMaxObj = obj; }
+        if (num < kkm) fBelowDescs.push(obj.desc);
+        if (num >= 90) fExcellents.push(obj.desc);
       }
     });
 
-    if (count === 0) return "Belum ada nilai yang diinput untuk semester ini.";
+    const fAvg = fCount > 0 ? Math.round(fTotal / fCount) : 0;
+    
+    // Deskripsi Formatif
+    let fDesc = "Belum ada nilai.";
+    if (fCount > 0) {
+        let sentences = [];
+        if (fMaxObj) {
+           if (fMaxVal >= 90) sentences.push(`Menunjukkan penguasaan sangat baik dalam ${fMaxObj.desc}.`);
+           else if (fMaxVal >= kkm) sentences.push(`Sudah mampu memahami ${fMaxObj.desc} dengan baik.`);
+           else sentences.push(`Mulai memahami konsep dasar ${fMaxObj.desc}.`);
+        }
+        if (fBelowDescs.length > 0) {
+            sentences.push(`Perlu bimbingan lebih lanjut dalam: ${fBelowDescs.join(", ")}.`);
+        }
+        fDesc = sentences.join(" ") || "Secara umum baik.";
+    }
 
-    const average = Math.round(totalScore / count);
-    let note = "";
+    // --- Sumatif ---
+    const examScoreVal = scores[`EXAM_${studentId}_${activeMapel}`];
+    const sExamScore = examScoreVal !== undefined && examScoreVal !== '' ? parseInt(examScoreVal) : 0;
+    let sBelowDescs = [];
+    
+    sumatifObjs.forEach(obj => {
+       const val = scores[`${studentId}_${obj.id}`];
+       if (val === 'BELUM') sBelowDescs.push(obj.desc);
+    });
 
-    if (average >= 90) {
-      note += "Prestasi yang sangat membanggakan! Secara umum Ananda sangat menguasai materi pembelajaran. ";
-    } else if (average >= 80) {
-      note += "Prestasi yang baik. Ananda menunjukkan pemahaman yang kuat pada sebagian besar materi. ";
-    } else if (average >= kkm) {
-      note += "Ananda telah mencapai kriteria ketuntasan minimal. Tingkatkan terus semangat belajarnya. ";
+    let sDesc = "";
+    if (sumatifObjs.length > 0) {
+        if (sBelowDescs.length === 0) sDesc = "Telah menuntaskan seluruh capaian pembelajaran sumatif dengan baik.";
+        else sDesc = `Perlu perbaikan pada kompetensi: ${sBelowDescs.join(", ")}.`;
     } else {
-      note += "Perlu usaha lebih keras lagi dalam belajar. Jangan ragu untuk bertanya jika mengalami kesulitan. ";
+        sDesc = "Belum ada TP Sumatif.";
     }
 
-    if (excellent.length > 0) {
-       note += `Kekuatan utama Ananda terlihat pada pemahaman ${excellent.slice(0, 2).join(", ")}. `;
-    }
+    // --- Final Score & Note ---
+    // If exam is missing (0), we don't average it down. Just use formatif.
+    // Logic: If Exam > 0, avg(formatif, exam). Else if Formatif > 0, use formatif. Else 0.
+    let finalScore = '-';
+    if (sExamScore > 0 && fAvg > 0) finalScore = Math.round((fAvg + sExamScore) / 2);
+    else if (fAvg > 0) finalScore = fAvg; // Fallback if no exam
+    else if (sExamScore > 0) finalScore = sExamScore; // Fallback if no formatif
 
-    if (belowKKM.length > 0) {
-       note += `Perlu perhatian khusus dan latihan lebih banyak pada materi: ${belowKKM.slice(0, 3).join(", ")}. `;
-    }
-
-    note += "Tetap semangat dan jaga kesehatan.";
-
-    return note;
-  };
-
-  const getAnalysis = (studentId, type) => {
-    const typeObjs = objectives.filter(o => o.mapel === activeMapel && o.type === type);
-    if (typeObjs.length === 0) return { avg: 0, desc: "Belum ada TP yang dinilai." };
-
-    let total = 0, count = 0;
+    // Teacher Note
+    let note = "";
+    const numFinal = finalScore === '-' ? 0 : finalScore;
     
-    let maxVal = -1;
-    let maxObj = null;
-    let belowKKMDescriptions = [];
-    
-    const kkm = schoolData.kkm || 75;
-
-    typeObjs.forEach(obj => {
-      const val = scores[`${studentId}_${obj.id}`];
-      if (val !== undefined && val !== "") {
-        const num = parseInt(val);
-        total += num;
-        count++;
-        
-        if (num > maxVal) { maxVal = num; maxObj = obj; }
-        
-        if (num < kkm) { belowKKMDescriptions.push(obj.desc); }
-      }
-    });
-
-    if (count === 0) return { avg: '-', desc: "Belum ada nilai." };
-    const avg = Math.round(total / count);
-    
-    let sentences = [];
-
-    if (maxObj) {
-      if (maxVal >= 90) sentences.push(`Menunjukkan penguasaan yang sangat baik dalam ${maxObj.desc}.`);
-      else if (maxVal >= kkm) sentences.push(`Sudah mampu memahami ${maxObj.desc} dengan baik.`);
-      else sentences.push(`Mulai memahami konsep dasar ${maxObj.desc}.`);
+    if (numFinal > 0) {
+        if (numFinal >= 90) note += "Prestasi sangat membanggakan! Pertahankan semangat belajarmu. ";
+        else if (numFinal >= kkm) note += "Ananda telah mencapai ketuntasan minimal. Tingkatkan lagi belajarnya. ";
+        else note += "Perlu usaha lebih keras lagi. Jangan ragu bertanya jika kesulitan. ";
+    } else {
+        note += "Belum ada nilai yang cukup untuk evaluasi. ";
     }
-
-    if (belowKKMDescriptions.length > 0) {
-       const descList = belowKKMDescriptions.join(", ");
-       sentences.push(`Perlu peningkatan dan bimbingan lebih lanjut khususnya dalam: ${descList}.`);
-    }
-
-    let desc = sentences.join(" ");
-    if (!desc) desc = "Secara umum telah memahami materi dengan cukup baik.";
-
-    return { avg, desc };
+    
+    if (fExcellents.length > 0) note += `Kekuatan utama terlihat pada: ${fExcellents.slice(0, 2).join(", ")}. `;
+    if (fBelowDescs.length > 0) note += `Perlu perhatian pada: ${fBelowDescs.slice(0, 2).join(", ")}. `;
+    if (sBelowDescs.length > 0) note += `Segera tuntaskan materi sumatif yang belum selesai. `;
+    
+    return { 
+        fAvg, fDesc, 
+        sExamScore, sDesc, 
+        finalScore, note,
+        fBelowDescs, sBelowDescs // for detailed list checking
+    };
   };
 
   return (
@@ -1090,13 +1247,15 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
           <div className="flex gap-2 w-full md:w-auto">
             <select 
               className="p-2 border rounded-lg bg-gray-50 flex-1 md:w-64"
-              onChange={(e) => setSelectedStudent(students.find(s => s.id.toString() === e.target.value))}
-              value={selectedStudent?.id || ''}
+              onChange={(e) => setSelectedId(e.target.value)}
+              value={selectedId}
             >
-              <option value="">-- Pilih Siswa --</option>
-              {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              <option value="">-- Pilih Mode Laporan --</option>
+              <option value="all" className="font-bold bg-emerald-50 text-emerald-800">📂 Tampilkan Semua Siswa (Cetak Massal)</option>
+              <optgroup label="Pilih Siswa Perorangan">
+                {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </optgroup>
             </select>
-            {/* BUTTON CETAK diperjelas */}
             <button 
               onClick={handlePrint} 
               className="bg-slate-800 text-white px-5 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-900 transition-colors shadow-lg font-bold"
@@ -1107,7 +1266,6 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
           </div>
         </div>
         
-        {/* Tools Edit Metadata Rapor */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-emerald-50 p-4 rounded-lg border border-emerald-100">
            <div>
              <label className="text-xs font-bold text-emerald-800 mb-1 block">Tahun Pelajaran</label>
@@ -1134,148 +1292,169 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
         </div>
       </div>
 
-      {/* Tampilan A4 */}
-      <div className="overflow-auto bg-gray-100 p-8 flex justify-center">
-        <div id="print-area" className="bg-white shadow-lg mx-auto relative a4-page">
-          {selectedStudent ? (
-            <div className="p-12 min-h-[297mm] flex flex-col justify-between">
-              <div>
-                {/* KOP RAPOR */}
-                <div className="text-center border-b-4 double-border border-black pb-4 mb-8">
-                  <h2 className="text-2xl font-bold uppercase tracking-wider">{schoolData.instansi}</h2>
-                  <p className="text-base mt-1 uppercase font-semibold tracking-wide">Laporan Hasil Belajar (Rapor)</p>
-                </div>
+      <div className="overflow-auto bg-gray-100 p-8 flex justify-center flex-col items-center gap-8">
+        {studentsToRender.length > 0 ? (
+          studentsToRender.map((student) => {
+            const data = getAnalysisData(student.id);
 
-                {/* IDENTITAS */}
-                <div className="mb-8 text-sm">
-                  <table className="w-full">
-                    <tbody>
-                      <tr>
-                        <td className="font-semibold py-1 w-32">Nama Siswa</td><td className="w-4">:</td><td>{selectedStudent.name}</td>
-                        <td className="font-semibold py-1 w-32 pl-8">Kelas</td><td className="w-4">:</td><td>{schoolData.kelas}</td>
-                      </tr>
-                      <tr>
-                        <td className="font-semibold py-1">Nomor Induk</td><td>:</td><td>-</td>
-                        <td className="font-semibold py-1 pl-8">Semester</td><td>:</td><td>{schoolData.semester}</td>
-                      </tr>
-                       <tr>
-                        <td className="font-semibold py-1">Nama Sekolah</td><td>:</td><td>{schoolData.instansi}</td>
-                        <td className="font-semibold py-1 pl-8">Tahun Ajaran</td><td>:</td><td>{schoolData.tahunAjar}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <div className="mt-4 pt-2 border-t border-dashed border-gray-300">
-                     <span className="font-bold bg-gray-100 px-2 py-1 rounded text-xs border border-gray-300">Mata Pelajaran: {activeMapel}</span>
-                     <span className="ml-2 text-xs text-gray-500">(KKM: {schoolData.kkm || 75})</span>
+            return (
+            <div key={student.id} className="bg-white shadow-lg mx-auto relative a4-page report-card-container">
+              <div className="p-12 min-h-[297mm] flex flex-col justify-between">
+                <div>
+                  <div className="text-center border-b-4 double-border border-black pb-4 mb-8">
+                    <h2 className="text-2xl font-bold uppercase tracking-wider">{schoolData.instansi}</h2>
+                    <p className="text-base mt-1 uppercase font-semibold tracking-wide">Laporan Hasil Belajar (Rapor)</p>
+                  </div>
+
+                  <div className="mb-8 text-sm">
+                    <table className="w-full">
+                      <tbody>
+                        <tr>
+                          <td className="font-semibold py-1 w-32">Nama Siswa</td><td className="w-4">:</td><td>{student.name}</td>
+                          <td className="font-semibold py-1 w-32 pl-8">Kelas</td><td className="w-4">:</td><td>{schoolData.kelas}</td>
+                        </tr>
+                        <tr>
+                          <td className="font-semibold py-1">Nomor Induk</td><td>:</td><td>-</td>
+                          <td className="font-semibold py-1 pl-8">Semester</td><td>:</td><td>{schoolData.semester}</td>
+                        </tr>
+                        <tr>
+                          <td className="font-semibold py-1">Nama Sekolah</td><td>:</td><td>{schoolData.instansi}</td>
+                          <td className="font-semibold py-1 pl-8">Tahun Ajaran</td><td>:</td><td>{schoolData.tahunAjar}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div className="mt-4 pt-2 border-t border-dashed border-gray-300">
+                      <span className="font-bold bg-gray-100 px-2 py-1 rounded text-xs border border-gray-300">Mata Pelajaran: {activeMapel}</span>
+                      <span className="ml-2 text-xs text-gray-500">(KKM: {schoolData.kkm || 75})</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-8">
+                    <h4 className="font-bold border-b-2 border-black mb-2 pb-1 text-md">A. Capaian Pembelajaran</h4>
+                    <table className="w-full border-collapse border border-black text-sm">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-black p-3 w-1/4 text-left">Aspek</th>
+                          <th className="border border-black p-3 w-20 text-center">Nilai</th>
+                          <th className="border border-black p-3 text-left">Deskripsi Capaian Kompetensi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border border-black p-3 font-bold capitalize">Formatif (Harian)</td>
+                          <td className="border border-black p-3 text-center text-lg font-bold">{data.fAvg || '-'}</td>
+                          <td className="border border-black p-3 text-justify leading-relaxed align-top">{data.fDesc}</td>
+                        </tr>
+                        <tr>
+                          <td className="border border-black p-3 font-bold capitalize">Sumatif (Ujian Akhir)</td>
+                          <td className="border border-black p-3 text-center text-lg font-bold">{data.sExamScore > 0 ? data.sExamScore : '-'}</td>
+                          <td className="border border-black p-3 text-justify leading-relaxed align-top">{data.sDesc}</td>
+                        </tr>
+                        <tr className="bg-emerald-50">
+                          <td className="border border-black p-3 font-bold uppercase text-emerald-900">Nilai Akhir</td>
+                          <td className="border border-black p-3 text-center text-xl font-bold text-emerald-900">{data.finalScore}</td>
+                          <td className="border border-black p-3 text-center italic text-xs text-emerald-700 font-medium align-middle">
+                             (Gabungan Rata-rata Formatif & Nilai Ujian)
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="mb-8 break-inside-avoid">
+                    <h4 className="font-bold border-b-2 border-black mb-2 pb-1 text-md">B. Rincian Daftar Nilai</h4>
+                    <table className="w-full border-collapse border border-black text-sm">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-black p-2 w-10 text-center">No</th>
+                          <th className="border border-black p-2 w-24 text-center">Kode TP</th>
+                          <th className="border border-black p-2 text-left">Tujuan Pembelajaran</th>
+                          <th className="border border-black p-2 w-24 text-center">Jenis</th>
+                          <th className="border border-black p-2 w-24 text-center">Status / Nilai</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {objectives
+                          .filter(o => o.mapel === activeMapel)
+                          .sort((a, b) => a.type === b.type ? 0 : a.type === 'formatif' ? -1 : 1)
+                          .map((obj, idx) => {
+                            const val = scores[`${student.id}_${obj.id}`];
+                            const kkm = schoolData.kkm || 75;
+                            const isSumatif = obj.type === 'sumatif';
+                            let displayVal = "-";
+                            let isRed = false;
+
+                            if (isSumatif) {
+                                if (val === 'BELUM') {
+                                    displayVal = "Belum Tuntas";
+                                    isRed = true;
+                                } else {
+                                    displayVal = "Tuntas";
+                                }
+                            } else {
+                                if (val !== undefined && val !== "") {
+                                    displayVal = val;
+                                    if (val < kkm) isRed = true;
+                                }
+                            }
+
+                            return (
+                              <tr key={obj.id}>
+                                <td className="border border-black p-2 text-center">{idx + 1}</td>
+                                <td className="border border-black p-2 text-center font-bold text-xs">{obj.code}</td>
+                                <td className="border border-black p-2 text-xs">{obj.desc}</td>
+                                <td className="border border-black p-2 text-center capitalize text-xs">{obj.type}</td>
+                                <td className={`border border-black p-2 text-center font-bold text-xs ${isRed ? 'text-red-600' : ''}`}>
+                                  {displayVal}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        }
+                        <tr>
+                           <td className="border border-black p-2 text-center">-</td>
+                           <td className="border border-black p-2 text-center font-bold text-xs">TES</td>
+                           <td className="border border-black p-2 text-xs font-bold">Ujian Sumatif Akhir</td>
+                           <td className="border border-black p-2 text-center text-xs">Sumatif</td>
+                           <td className="border border-black p-2 text-center font-bold text-xs">{data.sExamScore > 0 ? data.sExamScore : '-'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="mb-8 break-inside-avoid">
+                    <h4 className="font-bold border-b border-black mb-2 pb-1 text-md">C. Catatan Guru</h4>
+                    <div className="border border-black min-h-[6rem] h-auto p-3 rounded-sm text-sm italic">
+                      {data.note}
+                    </div>
                   </div>
                 </div>
 
-                {/* A. TABEL CAPAIAN PEMBELAJARAN (Ringkasan) */}
-                <div className="mb-8">
-                  <h4 className="font-bold border-b-2 border-black mb-2 pb-1 text-md">A. Capaian Pembelajaran</h4>
-                  <table className="w-full border-collapse border border-black text-sm">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="border border-black p-3 w-1/4 text-left">Aspek</th>
-                        <th className="border border-black p-3 w-20 text-center">Nilai Akhir</th>
-                        <th className="border border-black p-3 text-left">Deskripsi Capaian Kompetensi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {['formatif', 'sumatif'].map(type => {
-                        const analysis = getAnalysis(selectedStudent.id, type);
-                        return (
-                          <tr key={type}>
-                            <td className="border border-black p-3 font-bold capitalize">
-                              {type === 'formatif' ? 'Formatif' : 'Sumatif'}
-                            </td>
-                            <td className="border border-black p-3 text-center text-lg font-bold">
-                              {analysis.avg}
-                            </td>
-                            <td className="border border-black p-3 text-justify leading-relaxed align-top">
-                              {analysis.desc}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* B. DAFTAR NILAI (Rincian) - BARU */}
-                <div className="mb-8 break-inside-avoid">
-                  <h4 className="font-bold border-b-2 border-black mb-2 pb-1 text-md">B. Rincian Daftar Nilai</h4>
-                  <table className="w-full border-collapse border border-black text-sm">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="border border-black p-2 w-10 text-center">No</th>
-                        <th className="border border-black p-2 w-24 text-center">Kode TP</th>
-                        <th className="border border-black p-2 text-left">Tujuan Pembelajaran</th>
-                        <th className="border border-black p-2 w-24 text-center">Jenis</th>
-                        <th className="border border-black p-2 w-16 text-center">Nilai</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {objectives
-                        .filter(o => o.mapel === activeMapel)
-                        .sort((a, b) => a.type === b.type ? 0 : a.type === 'formatif' ? -1 : 1) // Sort Formatif first
-                        .map((obj, idx) => {
-                          const val = scores[`${selectedStudent.id}_${obj.id}`];
-                          const kkm = schoolData.kkm || 75;
-                          return (
-                            <tr key={obj.id}>
-                              <td className="border border-black p-2 text-center">{idx + 1}</td>
-                              <td className="border border-black p-2 text-center font-bold text-xs">{obj.code}</td>
-                              <td className="border border-black p-2 text-xs">{obj.desc}</td>
-                              <td className="border border-black p-2 text-center capitalize text-xs">{obj.type}</td>
-                              <td className={`border border-black p-2 text-center font-bold ${val < kkm && val !== undefined && val !== "" ? 'text-red-600' : ''}`}>
-                                {val !== undefined && val !== "" ? val : "-"}
-                              </td>
-                            </tr>
-                          );
-                        })
-                      }
-                      {objectives.filter(o => o.mapel === activeMapel).length === 0 && (
-                        <tr><td colSpan="5" className="border border-black p-2 text-center italic">Belum ada TP yang diinput.</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* C. CATATAN GURU */}
-                <div className="mb-8 break-inside-avoid">
-                  <h4 className="font-bold border-b border-black mb-2 pb-1 text-md">C. Catatan Guru</h4>
-                  <div className="border border-black min-h-[6rem] h-auto p-3 rounded-sm text-sm italic">
-                    {getTeacherNote(selectedStudent.id)}
+                <div className="flex justify-between mt-8 px-4 text-sm break-inside-avoid">
+                  <div className="text-center w-48">
+                    <p className="mb-20">Mengetahui,<br/>Orang Tua/Wali</p>
+                    <p className="border-t border-black"></p>
+                  </div>
+                  <div className="text-center w-48">
+                    <p className="mb-20">
+                      {schoolData.tempat}, {new Date(schoolData.tanggal).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})} <br/>
+                      Guru Mata Pelajaran
+                    </p>
+                    <p className="font-bold underline">{schoolData.guru}</p>
+                    <p className="text-xs">NIP. .......................</p>
                   </div>
                 </div>
               </div>
-
-              {/* TANDA TANGAN */}
-              <div className="flex justify-between mt-8 px-4 text-sm break-inside-avoid">
-                <div className="text-center w-48">
-                  <p className="mb-20">Mengetahui,<br/>Orang Tua/Wali</p>
-                  <p className="border-t border-black"></p>
-                </div>
-                <div className="text-center w-48">
-                  <p className="mb-20">
-                    {schoolData.tempat}, {new Date(schoolData.tanggal).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})} <br/>
-                    Guru Mata Pelajaran
-                  </p>
-                  <p className="font-bold underline">{schoolData.guru}</p>
-                  <p className="text-xs">NIP. .......................</p>
-                </div>
-              </div>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400">
-              <p>Pilih siswa untuk melihat rapor</p>
-            </div>
-          )}
-        </div>
+          );
+        })
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-slate-400 min-h-[297mm]">
+            <p>Pilih mode laporan untuk melihat rapor</p>
+          </div>
+        )}
       </div>
 
-      {/* CSS KHUSUS PRINT & A4 */}
       <style>{`
         .a4-page {
           width: 210mm;
@@ -1296,7 +1475,6 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
             overflow: visible !important;
           }
           
-          /* RESET OVERFLOW UNTUK SEMUA PARENT */
           #root, main, .min-h-screen {
             height: auto !important;
             min-height: 0 !important;
@@ -1304,7 +1482,6 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
             display: block !important;
           }
 
-          /* TAMPILKAN AREA PRINT */
           #print-area, #print-area * {
             visibility: visible;
           }
@@ -1319,12 +1496,19 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
             overflow: visible !important;
           }
 
-          /* SEMBUNYIKAN ELEMEN LAIN */
+          .report-card-container {
+            page-break-after: always;
+            margin-bottom: 0;
+            box-shadow: none;
+          }
+          .report-card-container:last-child {
+            page-break-after: auto;
+          }
+
           .no-print, aside, header, button {
             display: none !important;
           }
           
-          /* MENCEGAH PEMOTONGAN HALAMAN DI TENGAH ELEMEN PENTING */
           .break-inside-avoid {
             page-break-inside: avoid;
           }
@@ -1333,7 +1517,6 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
           }
         }
         
-        /* ANIMASI TOAST */
         @keyframes slideIn {
           from { transform: translateX(100%); opacity: 0; }
           to { transform: translateX(0); opacity: 1; }
