@@ -15,9 +15,7 @@ const AI_DATASET = {
       'Mampu mengenal berbagai macam warna',
       'Dapat bersosialisasi dengan teman sebaya',
       'Mengenal huruf abjad A-Z dasar',
-      'Melakukan kegiatan ibadah sehari-hari sederhana',
-      'Mampu mengelompokkan benda berdasarkan ukuran',
-      'Mengekspresikan diri melalui karya seni sederhana'
+      'Melakukan kegiatan ibadah sehari-hari sederhana'
     ]
   },
   'SD': {
@@ -176,7 +174,7 @@ const Toast = ({ message, type, onClose }) => (
 // --- KOMPONEN UTAMA ---
 
 export default function App() {
-  const [appState, setAppState] = useState('splash'); 
+  const [appState, setAppState] = useState('splash'); // splash, setup, dashboard
   const [schoolData, setSchoolData] = useState({
     instansi: '',
     guru: '',
@@ -185,9 +183,9 @@ export default function App() {
     tahunAjar: '2025/2026',
     level: 'SD',
     mapels: [],
-    kkm: 75,
-    tempat: 'Jakarta',
-    tanggal: new Date().toISOString().split('T')[0]
+    kkm: 75, // Default KKM
+    tempat: 'Jakarta', // Default Tempat Rapor
+    tanggal: new Date().toISOString().split('T')[0] // Default Tanggal Hari Ini
   });
   
   const [activeMapel, setActiveMapel] = useState('');
@@ -198,7 +196,7 @@ export default function App() {
   const [scores, setScores] = useState({}); 
   const [view, setView] = useState('tujuan'); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [toast, setToast] = useState(null); 
+  const [toast, setToast] = useState(null); // { message, type }
 
   // --- LOGIKA SPLASH SCREEN ---
   useEffect(() => {
@@ -215,7 +213,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Safety check: jika mapel ada tapi activeMapel kosong
     if (schoolData.mapels && schoolData.mapels.length > 0 && !activeMapel) {
       setActiveMapel(schoolData.mapels[0]);
     }
@@ -255,7 +252,7 @@ export default function App() {
       if(sSchool.mapels && sSchool.mapels.length > 0) setActiveMapel(sSchool.mapels[0]);
     } catch (e) {
       console.error("Gagal memuat data", e);
-      localStorage.clear(); // Reset if corrupt
+      localStorage.clear(); 
     }
   };
 
@@ -266,6 +263,7 @@ export default function App() {
     }
   };
 
+  // --- RENDER CONDITION ---
   if (appState === 'splash') return <SplashScreen />;
   if (appState === 'setup') return (
     <SetupForm 
@@ -559,6 +557,7 @@ function ObjectivesManager({ objectives, setObjectives, activeMapel, level }) {
     const finalType = type || newObj.type;
     if (!finalDesc) return;
     
+    // Perbaikan: Hitung index berdasarkan state terbaru di filter
     const currentTypeCount = currentMapelObjectives.filter(o => o.type === finalType).length;
     const code = finalType === 'formatif' ? `TF.${currentTypeCount + 1}` : `TS.${currentTypeCount + 1}`;
     
@@ -588,6 +587,7 @@ function ObjectivesManager({ objectives, setObjectives, activeMapel, level }) {
       else setSelectedRecs([...selectedRecs, rec]);
     };
 
+    // PERBAIKAN: Fungsi Bulk Add agar kode (TF.1, TF.2) berurutan dan tidak ganda
     const handleBulkAdd = () => {
        const existingCount = objectives.filter(o => o.mapel === activeMapel && o.type === newObj.type).length;
        const newItems = selectedRecs.map((rec, index) => ({
@@ -689,6 +689,7 @@ function StudentManager({ students, setStudents }) {
         <Users className="text-emerald-600" /> Manajemen Data Siswa
       </h3>
 
+      {/* PERBAIKAN: Layout Grid 1:2 agar Import Excel lebih besar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 items-start">
         
         {/* Card Input Manual (1 Kolom) */}
@@ -781,8 +782,8 @@ function StudentManager({ students, setStudents }) {
 function GradingSystem({ students, objectives, scores, setScores, activeMapel, schoolData, setSchoolData }) {
   const [selectedType, setSelectedType] = useState('formatif');
   const [showFullDesc, setShowFullDesc] = useState(false);
-  const [gradingModalStudent, setGradingModalStudent] = useState(null); 
-  const [tpModalInfo, setTpModalInfo] = useState(null); 
+  const [gradingModalStudent, setGradingModalStudent] = useState(null); // State untuk Popup Modal
+  const [tpModalInfo, setTpModalInfo] = useState(null); // State untuk Pop-up TP Detail
   
   const filteredObjectives = objectives.filter(o => o.mapel === activeMapel && o.type === selectedType);
 
@@ -797,7 +798,6 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
     handleScoreChange(`${studentId}_${objId}`, numVal);
   }
 
-  // Toggle Logic for Sumatif TPs
   const handleToggleSumatif = (studentId, objId) => {
     setScores(prev => {
       const key = `${studentId}_${objId}`;
@@ -840,7 +840,6 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
     setTpModalInfo(null);
   };
 
-  // --- KOMPONEN POPUP MODAL INPUT ---
   const GradingModal = () => {
     if(!gradingModalStudent) return null;
     return (
@@ -905,7 +904,6 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
     );
   };
 
-  // --- POPUP INFO TP ---
   const TPInfoModal = () => {
     const [bulkValue, setBulkValue] = useState('');
     const [pasteValue, setPasteValue] = useState('');
@@ -1048,7 +1046,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
                 <th 
                   key={obj.id} 
                   className={`p-1 border-r text-center bg-gray-50 align-top transition-all cursor-pointer hover:bg-gray-100 ${showFullDesc ? 'min-w-[150px]' : 'min-w-[60px]'}`}
-                  onClick={() => setTpModalInfo(obj)} 
+                  onClick={() => setTpModalInfo(obj)}
                   title="Klik untuk lihat detail TP"
                 >
                   <div className="flex flex-col items-center group relative h-full justify-start pt-1">
@@ -1091,8 +1089,8 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
                 )}
                 {filteredObjectives.map(obj => {
                    const score = scores[`${student.id}_${obj.id}`];
+                   const isBelowKKM = score !== undefined && score !== '' && score < (schoolData.kkm || 75);
                    const isSumatif = obj.type === 'sumatif';
-                   const isBelowKKM = !isSumatif && score !== undefined && score !== '' && score < (schoolData.kkm || 75);
                    const isBelumTuntas = isSumatif && score === 'BELUM';
 
                    return (
@@ -1136,7 +1134,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
 
 function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolData, activeMapel }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [selectedId, setSelectedId] = useState('');
+  const [selectedId, setSelectedId] = useState('all'); 
 
   const handlePrint = () => {
     window.print();
@@ -1146,17 +1144,14 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
     ? students 
     : students.filter(s => s.id.toString() === selectedId);
 
-  // Analysis function (reused logic)
-  const getAnalysisData = (studentId) => {
-    const formatifObjs = objectives.filter(o => o.mapel === activeMapel && o.type === 'formatif');
-    const sumatifObjs = objectives.filter(o => o.mapel === activeMapel && o.type === 'sumatif');
+  // Helper Logic moved inside component to access state
+  const getStudentReportData = (studentId) => {
     const kkm = schoolData.kkm || 75;
-
-    // --- Formatif ---
-    let fTotal = 0, fCount = 0;
-    let fMaxVal = -1, fMaxObj = null;
-    let fBelowDescs = [];
-    let fExcellents = [];
+    
+    // --- FORMATIF CALCS ---
+    const formatifObjs = objectives.filter(o => o.mapel === activeMapel && o.type === 'formatif');
+    let fTotal = 0, fCount = 0, fMaxVal = -1, fMaxObj = null;
+    let fBelowDescs = [], fExcellents = [];
 
     formatifObjs.forEach(obj => {
       const val = scores[`${studentId}_${obj.id}`];
@@ -1172,7 +1167,7 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
 
     const fAvg = fCount > 0 ? Math.round(fTotal / fCount) : 0;
     
-    // Deskripsi Formatif
+    // Formatif Description
     let fDesc = "Belum ada nilai.";
     if (fCount > 0) {
         let sentences = [];
@@ -1187,16 +1182,18 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
         fDesc = sentences.join(" ") || "Secara umum baik.";
     }
 
-    // --- Sumatif ---
+    // --- SUMATIF CALCS ---
+    const sumatifObjs = objectives.filter(o => o.mapel === activeMapel && o.type === 'sumatif');
     const examScoreVal = scores[`EXAM_${studentId}_${activeMapel}`];
     const sExamScore = examScoreVal !== undefined && examScoreVal !== '' ? parseInt(examScoreVal) : 0;
-    let sBelowDescs = [];
     
+    let sBelowDescs = [];
     sumatifObjs.forEach(obj => {
        const val = scores[`${studentId}_${obj.id}`];
        if (val === 'BELUM') sBelowDescs.push(obj.desc);
     });
 
+    // Sumatif Description
     let sDesc = "";
     if (sumatifObjs.length > 0) {
         if (sBelowDescs.length === 0) sDesc = "Telah menuntaskan seluruh capaian pembelajaran sumatif dengan baik.";
@@ -1205,15 +1202,12 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
         sDesc = "Belum ada TP Sumatif.";
     }
 
-    // --- Final Score & Note ---
-    // If exam is missing (0), we don't average it down. Just use formatif.
-    // Logic: If Exam > 0, avg(formatif, exam). Else if Formatif > 0, use formatif. Else 0.
+    // --- FINAL SCORE & NOTE ---
     let finalScore = '-';
     if (sExamScore > 0 && fAvg > 0) finalScore = Math.round((fAvg + sExamScore) / 2);
-    else if (fAvg > 0) finalScore = fAvg; // Fallback if no exam
-    else if (sExamScore > 0) finalScore = sExamScore; // Fallback if no formatif
+    else if (fAvg > 0) finalScore = fAvg;
+    else if (sExamScore > 0) finalScore = sExamScore;
 
-    // Teacher Note
     let note = "";
     const numFinal = finalScore === '-' ? 0 : finalScore;
     
@@ -1228,13 +1222,8 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
     if (fExcellents.length > 0) note += `Kekuatan utama terlihat pada: ${fExcellents.slice(0, 2).join(", ")}. `;
     if (fBelowDescs.length > 0) note += `Perlu perhatian pada: ${fBelowDescs.slice(0, 2).join(", ")}. `;
     if (sBelowDescs.length > 0) note += `Segera tuntaskan materi sumatif yang belum selesai. `;
-    
-    return { 
-        fAvg, fDesc, 
-        sExamScore, sDesc, 
-        finalScore, note,
-        fBelowDescs, sBelowDescs // for detailed list checking
-    };
+
+    return { fAvg, fDesc, sExamScore, sDesc, finalScore, note };
   };
 
   return (
@@ -1250,7 +1239,6 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
               onChange={(e) => setSelectedId(e.target.value)}
               value={selectedId}
             >
-              <option value="">-- Pilih Mode Laporan --</option>
               <option value="all" className="font-bold bg-emerald-50 text-emerald-800">📂 Tampilkan Semua Siswa (Cetak Massal)</option>
               <optgroup label="Pilih Siswa Perorangan">
                 {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -1293,9 +1281,10 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
       </div>
 
       <div className="overflow-auto bg-gray-100 p-8 flex justify-center flex-col items-center gap-8">
+        <div id="print-area">
         {studentsToRender.length > 0 ? (
           studentsToRender.map((student) => {
-            const data = getAnalysisData(student.id);
+            const data = getStudentReportData(student.id);
 
             return (
             <div key={student.id} className="bg-white shadow-lg mx-auto relative a4-page report-card-container">
@@ -1333,7 +1322,7 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
                     <h4 className="font-bold border-b-2 border-black mb-2 pb-1 text-md">A. Capaian Pembelajaran</h4>
                     <table className="w-full border-collapse border border-black text-sm">
                       <thead>
-                        <tr className="bg-gray-100">
+                        <tr className="bg-gray-100 print:bg-gray-100">
                           <th className="border border-black p-3 w-1/4 text-left">Aspek</th>
                           <th className="border border-black p-3 w-20 text-center">Nilai</th>
                           <th className="border border-black p-3 text-left">Deskripsi Capaian Kompetensi</th>
@@ -1350,7 +1339,7 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
                           <td className="border border-black p-3 text-center text-lg font-bold">{data.sExamScore > 0 ? data.sExamScore : '-'}</td>
                           <td className="border border-black p-3 text-justify leading-relaxed align-top">{data.sDesc}</td>
                         </tr>
-                        <tr className="bg-emerald-50">
+                        <tr className="bg-emerald-50 print:bg-gray-200">
                           <td className="border border-black p-3 font-bold uppercase text-emerald-900">Nilai Akhir</td>
                           <td className="border border-black p-3 text-center text-xl font-bold text-emerald-900">{data.finalScore}</td>
                           <td className="border border-black p-3 text-center italic text-xs text-emerald-700 font-medium align-middle">
@@ -1365,7 +1354,7 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
                     <h4 className="font-bold border-b-2 border-black mb-2 pb-1 text-md">B. Rincian Daftar Nilai</h4>
                     <table className="w-full border-collapse border border-black text-sm">
                       <thead>
-                        <tr className="bg-gray-100">
+                        <tr className="bg-gray-100 print:bg-gray-100">
                           <th className="border border-black p-2 w-10 text-center">No</th>
                           <th className="border border-black p-2 w-24 text-center">Kode TP</th>
                           <th className="border border-black p-2 text-left">Tujuan Pembelajaran</th>
@@ -1453,6 +1442,7 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
             <p>Pilih mode laporan untuk melihat rapor</p>
           </div>
         )}
+        </div>
       </div>
 
       <style>{`
@@ -1466,55 +1456,87 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
           border-bottom-style: double;
         }
         @media print {
-          @page { size: A4; margin: 10mm; }
-          body {
-            visibility: hidden;
-            background: white;
+          @page { 
+            size: A4; 
+            margin: 0; 
+          }
+          body, html {
+            width: 100%;
+            height: 100%;
             margin: 0;
             padding: 0;
             overflow: visible !important;
           }
           
-          #root, main, .min-h-screen {
-            height: auto !important;
-            min-height: 0 !important;
-            overflow: visible !important;
+          /* Hide all top level elements */
+          body > * {
+            display: none !important;
+          }
+
+          /* Only display the root so we can reach the print area */
+          body > #root {
+            display: block !important;
+            position: relative !important;
+          }
+
+          /* Within root, hide the app layout but allow #print-area */
+          #root > div {
+             display: none !important;
+          }
+
+          /* FORCE VISIBILITY of Print Area */
+          #print-area, #print-area * {
+            visibility: visible !important;
             display: block !important;
           }
-
-          #print-area, #print-area * {
-            visibility: visible;
-          }
+          
+          /* Reset print area positioning */
           #print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 0;
-            margin: 0;
-            box-shadow: none;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
             overflow: visible !important;
+            
+            /* Ensure Colors Print */
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
 
+          /* Table and Flex fixes for print */
+          table { display: table !important; width: 100% !important; }
+          thead { display: table-header-group !important; }
+          tbody { display: table-row-group !important; }
+          tr { display: table-row !important; page-break-inside: avoid; }
+          td, th { display: table-cell !important; }
+          
           .report-card-container {
-            page-break-after: always;
-            margin-bottom: 0;
-            box-shadow: none;
+            display: block !important;
+            page-break-after: always !important;
+            margin-bottom: 0 !important;
+            box-shadow: none !important;
+            min-height: 297mm !important; /* Force full A4 height per student */
+            position: relative !important;
           }
           .report-card-container:last-child {
-            page-break-after: auto;
+            page-break-after: auto !important;
           }
 
-          .no-print, aside, header, button {
+          /* Hide UI elements explicitly */
+          .no-print, aside, header, button, nav {
             display: none !important;
           }
           
           .break-inside-avoid {
             page-break-inside: avoid;
           }
-          tr {
-            page-break-inside: avoid;
-          }
+          
+          /* Force Background Colors */
+          .bg-gray-100 { background-color: #f3f4f6 !important; }
+          .bg-emerald-50 { background-color: #ecfdf5 !important; }
         }
         
         @keyframes slideIn {
