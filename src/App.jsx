@@ -15,7 +15,9 @@ const AI_DATASET = {
       'Mampu mengenal berbagai macam warna',
       'Dapat bersosialisasi dengan teman sebaya',
       'Mengenal huruf abjad A-Z dasar',
-      'Melakukan kegiatan ibadah sehari-hari sederhana'
+      'Melakukan kegiatan ibadah sehari-hari sederhana',
+      'Mampu mengelompokkan benda berdasarkan ukuran',
+      'Mengekspresikan diri melalui karya seni sederhana'
     ]
   },
   'SD': {
@@ -840,6 +842,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
     setTpModalInfo(null);
   };
 
+  // --- KOMPONEN POPUP MODAL INPUT ---
   const GradingModal = () => {
     if(!gradingModalStudent) return null;
     return (
@@ -904,6 +907,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
     );
   };
 
+  // --- POPUP INFO TP ---
   const TPInfoModal = () => {
     const [bulkValue, setBulkValue] = useState('');
     const [pasteValue, setPasteValue] = useState('');
@@ -979,10 +983,12 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
   };
 
   return (
+    // CHANGE: Container uses 75vh to ensure fit within most screens, with explicit border
     <div className="bg-white rounded-xl shadow-sm flex flex-col h-[70vh] md:h-[75vh] relative border border-gray-200">
       <GradingModal />
       <TPInfoModal />
 
+      {/* HEADER INPUT NILAI - LAYOUT DIPERBAIKI (Flex Wrap + Gap) */}
       <div className="p-6 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4 shrink-0 bg-white z-40 relative rounded-t-xl">
         <div className="flex-1 min-w-[200px]">
            <h3 className="text-xl font-bold flex items-center gap-2">
@@ -991,7 +997,9 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
           <p className="text-xs text-slate-500 mt-1">Mapel: <span className="font-bold text-emerald-600">{activeMapel}</span></p>
         </div>
         
+        {/* Tombol-tombol di kanan */}
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          {/* Input KKM */}
           <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-200 shadow-sm">
              <Target size={16} className="text-yellow-700"/>
              <span className="text-sm font-bold text-yellow-800">KKM:</span>
@@ -1003,6 +1011,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
              />
           </div>
 
+          {/* Toggle Header View */}
           <button 
              onClick={() => setShowFullDesc(!showFullDesc)}
              className="flex items-center gap-2 text-slate-600 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium shadow-sm"
@@ -1011,6 +1020,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
              {showFullDesc ? <EyeOff size={16}/> : <Eye size={16}/>}
           </button>
 
+          {/* Switcher Formatif/Sumatif */}
           <div className="flex bg-gray-100 p-1 rounded-lg">
             <button 
               className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${selectedType === 'formatif' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
@@ -1028,13 +1038,16 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
         </div>
       </div>
 
+      {/* TABEL SCROLLABLE - Padding Bawah Ditambah */}
       <div className="flex-1 overflow-auto relative w-full bg-slate-50 rounded-b-xl scroll-smooth">
         <table className="w-full min-w-[600px] border-collapse">
           <thead className="sticky top-0 z-20 shadow-sm">
             <tr className="bg-gray-50 text-left border-b border-gray-200">
+              {/* Fix: Menggunakan min-w-[14rem] agar header Nama tidak terlalu kecil, serta memastikan width */}
               <th className="p-2 sticky left-0 bg-gray-50 border-r min-w-[14rem] w-56 z-30 font-bold text-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-xs uppercase tracking-wider">
                 Nama Siswa
               </th>
+              {/* UPDATED: EXAM SCORE COLUMN MOVED TO FRONT IN SUMATIF MODE */}
               {selectedType === 'sumatif' && (
                 <th className="p-2 border-r bg-emerald-50 text-center min-w-[100px] align-top z-20">
                    <div className="flex flex-col items-center pt-1">
@@ -1046,7 +1059,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
                 <th 
                   key={obj.id} 
                   className={`p-1 border-r text-center bg-gray-50 align-top transition-all cursor-pointer hover:bg-gray-100 ${showFullDesc ? 'min-w-[150px]' : 'min-w-[60px]'}`}
-                  onClick={() => setTpModalInfo(obj)}
+                  onClick={() => setTpModalInfo(obj)} // Pop-up saat klik Header
                   title="Klik untuk lihat detail TP"
                 >
                   <div className="flex flex-col items-center group relative h-full justify-start pt-1">
@@ -1067,6 +1080,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
           <tbody>
             {students.map((student, idx) => (
               <tr key={student.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                {/* Fix: Menggunakan div dalam td untuk Flex behavior yang benar dalam tabel */}
                 <td className="p-0 font-medium sticky left-0 bg-inherit border-r border-gray-200 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-slate-700 h-10 align-middle">
                   <div className="flex items-center justify-between w-56 px-2 h-full">
                     <span className="truncate w-[160px] text-xs" title={student.name}>{student.name}</span>
@@ -1075,6 +1089,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
                     </button>
                   </div>
                 </td>
+                {/* UPDATED: EXAM SCORE INPUT MOVED TO FRONT */}
                 {selectedType === 'sumatif' && (
                   <td className="p-1 text-center border-r border-gray-100 h-10">
                      <input 
@@ -1091,7 +1106,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
                    const score = scores[`${student.id}_${obj.id}`];
                    const isBelowKKM = score !== undefined && score !== '' && score < (schoolData.kkm || 75);
                    const isSumatif = obj.type === 'sumatif';
-                   const isBelumTuntas = isSumatif && score === 'BELUM';
+                   const isBelumTuntas = isSumatif && score === 'BELUM'; // Check if status is explicitly BELUM
 
                    return (
                     <td key={obj.id} className="p-1 text-center border-r border-gray-100 h-10 align-middle">
@@ -1124,6 +1139,7 @@ function GradingSystem({ students, objectives, scores, setScores, activeMapel, s
                 })}
               </tr>
             ))}
+            {/* Spacer Row lebih tinggi agar data terakhir aman */}
             <tr className="h-32 bg-transparent pointer-events-none"><td colSpan={100}></td></tr>
           </tbody>
         </table>
@@ -1291,6 +1307,10 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
               <div className="p-12 min-h-[297mm] flex flex-col justify-between">
                 <div>
                   <div className="text-center border-b-4 double-border border-black pb-4 mb-8">
+                    {/* Placeholder Logo */}
+                    <div className="flex justify-center mb-2 no-print-background">
+                       <School size={48} className="text-black"/>
+                    </div>
                     <h2 className="text-2xl font-bold uppercase tracking-wider">{schoolData.instansi}</h2>
                     <p className="text-base mt-1 uppercase font-semibold tracking-wide">Laporan Hasil Belajar (Rapor)</p>
                   </div>
