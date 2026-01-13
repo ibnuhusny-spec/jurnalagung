@@ -15,9 +15,7 @@ const AI_DATASET = {
       'Mampu mengenal berbagai macam warna',
       'Dapat bersosialisasi dengan teman sebaya',
       'Mengenal huruf abjad A-Z dasar',
-      'Melakukan kegiatan ibadah sehari-hari sederhana',
-      'Mampu mengelompokkan benda berdasarkan ukuran',
-      'Mengekspresikan diri melalui karya seni sederhana'
+      'Melakukan kegiatan ibadah sehari-hari sederhana'
     ]
   },
   'SD': {
@@ -282,12 +280,12 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 text-slate-800 font-sans flex flex-col md:flex-row overflow-hidden relative">
+    <div className="min-h-screen bg-gray-50 text-slate-800 font-sans flex flex-col md:flex-row overflow-hidden relative app-container">
       {/* Toast Notification */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Sidebar Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-white min-h-screen fixed h-full z-40 shadow-xl">
+      <aside className="sidebar hidden md:flex flex-col w-64 bg-slate-900 text-white min-h-screen fixed h-full z-40 shadow-xl">
         <div className="p-6 border-b border-slate-700 flex items-center gap-2">
           <School className="text-emerald-400" />
           <div>
@@ -312,7 +310,7 @@ export default function App() {
       </aside>
 
       {/* Mobile Header */}
-      <div className="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center fixed w-full z-50 top-0 shadow-md">
+      <div className="mobile-header md:hidden bg-slate-900 text-white p-4 flex justify-between items-center fixed w-full z-50 top-0 shadow-md">
         <div className="flex items-center gap-2">
           <School className="text-emerald-400" size={20}/>
           <span className="font-bold">Jurnal Guru</span>
@@ -324,7 +322,7 @@ export default function App() {
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-slate-900 z-50 pt-20 px-4 space-y-4 md:hidden">
+        <div className="fixed inset-0 bg-slate-900 z-50 pt-20 px-4 space-y-4 md:hidden no-print">
           <NavButton active={view === 'tujuan'} onClick={() => {setView('tujuan'); setIsMobileMenuOpen(false)}} icon={<BookOpen />} label="Tujuan Pembelajaran" />
           <NavButton active={view === 'siswa'} onClick={() => {setView('siswa'); setIsMobileMenuOpen(false)}} icon={<Users />} label="Data Siswa" />
           <NavButton active={view === 'nilai'} onClick={() => {setView('nilai'); setIsMobileMenuOpen(false)}} icon={<Calculator />} label="Input Nilai" />
@@ -342,8 +340,8 @@ export default function App() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 p-4 md:p-8 mt-16 md:mt-0 transition-all overflow-x-hidden min-h-screen">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-4 border-b border-gray-200 gap-4">
+      <main className="content-wrapper flex-1 md:ml-64 p-4 md:p-8 mt-16 md:mt-0 transition-all overflow-x-hidden min-h-screen">
+        <header className="main-header flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-4 border-b border-gray-200 gap-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-800">{schoolData.instansi}</h2>
             <p className="text-slate-500 text-sm">
@@ -394,9 +392,104 @@ export default function App() {
       </main>
       
       {/* Mobile Save Button */}
-      <button onClick={saveDataToStorage} className="md:hidden fixed bottom-6 right-6 bg-emerald-600 text-white p-4 rounded-full shadow-lg z-30">
+      <button onClick={saveDataToStorage} className="md:hidden fixed bottom-6 right-6 bg-emerald-600 text-white p-4 rounded-full shadow-lg z-30 no-print">
         <Save size={24} />
       </button>
+
+       {/* CSS KHUSUS PRINT & A4 - REVISED */}
+       <style>{`
+        .a4-page {
+          width: 210mm;
+          min-height: 297mm;
+          background: white;
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .double-border {
+          border-bottom-style: double;
+        }
+        
+        @media print {
+          /* RESET HALAMAN */
+          @page { margin: 0; size: auto; }
+          body, html {
+            height: auto !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          /* SEMBUNYIKAN UI APLIKASI */
+          .sidebar, 
+          .mobile-header, 
+          .main-header, 
+          .no-print, 
+          button, 
+          nav {
+            display: none !important;
+          }
+
+          /* PASTIKAN CONTAINER UTAMA TIDAK MEMBATASI SCROLL */
+          #root, .app-container, main, .content-wrapper, .min-h-screen {
+             height: auto !important;
+             overflow: visible !important;
+             display: block !important;
+             position: static !important;
+             margin: 0 !important;
+             padding: 0 !important;
+             width: 100% !important;
+          }
+
+          /* FORCE TAMPILAN AREA PRINT */
+          #print-area {
+            display: block !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            visibility: visible !important;
+          }
+
+          #print-area * {
+            visibility: visible !important;
+          }
+
+          /* RAPOR PER HALAMAN */
+          .report-card-container {
+            width: 100% !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            min-height: 297mm !important;
+            position: relative !important;
+          }
+
+          .report-card-container:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+          }
+          
+          /* Force Background Colors untuk Tabel */
+          .bg-gray-100 { background-color: #f3f4f6 !important; }
+          .bg-emerald-50 { background-color: #ecfdf5 !important; }
+          
+          .break-inside-avoid {
+            page-break-inside: avoid;
+          }
+        }
+        
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slideIn {
+          animation: slideIn 0.3s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }
@@ -1475,88 +1568,79 @@ function ReportAnalysis({ students, objectives, scores, schoolData, setSchoolDat
         .double-border {
           border-bottom-style: double;
         }
+        
         @media print {
-          @page { 
-            size: A4; 
-            margin: 0; 
-          }
+          /* RESET HALAMAN */
+          @page { margin: 0; size: auto; }
           body, html {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
+            height: auto !important;
             overflow: visible !important;
-          }
-          
-          /* Hide all top level elements */
-          body > * {
-            display: none !important;
-          }
-
-          /* Only display the root so we can reach the print area */
-          body > #root {
-            display: block !important;
-            position: relative !important;
-          }
-
-          /* Within root, hide the app layout but allow #print-area */
-          #root > div {
-             display: none !important;
-          }
-
-          /* FORCE VISIBILITY of Print Area */
-          #print-area, #print-area * {
-            visibility: visible !important;
-            display: block !important;
-          }
-          
-          /* Reset print area positioning */
-          #print-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            box-shadow: none !important;
-            overflow: visible !important;
-            
-            /* Ensure Colors Print */
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-
-          /* Table and Flex fixes for print */
-          table { display: table !important; width: 100% !important; }
-          thead { display: table-header-group !important; }
-          tbody { display: table-row-group !important; }
-          tr { display: table-row !important; page-break-inside: avoid; }
-          td, th { display: table-cell !important; }
           
-          .report-card-container {
-            display: block !important;
-            page-break-after: always !important;
-            margin-bottom: 0 !important;
-            box-shadow: none !important;
-            min-height: 297mm !important; /* Force full A4 height per student */
-            position: relative !important;
-          }
-          .report-card-container:last-child {
-            page-break-after: auto !important;
-          }
-
-          /* Hide UI elements explicitly */
-          .no-print, aside, header, button, nav {
+          /* SEMBUNYIKAN UI APLIKASI */
+          .sidebar, 
+          .mobile-header, 
+          .main-header, 
+          .no-print, 
+          button, 
+          nav {
             display: none !important;
           }
+
+          /* PASTIKAN CONTAINER UTAMA TIDAK MEMBATASI SCROLL */
+          #root, .app-container, main, .content-wrapper, .min-h-screen {
+             height: auto !important;
+             overflow: visible !important;
+             display: block !important;
+             position: static !important;
+             margin: 0 !important;
+             padding: 0 !important;
+             width: 100% !important;
+          }
+
+          /* FORCE TAMPILAN AREA PRINT */
+          #print-area {
+            display: block !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            visibility: visible !important;
+          }
+
+          #print-area * {
+            visibility: visible !important;
+          }
+
+          /* RAPOR PER HALAMAN */
+          .report-card-container {
+            width: 100% !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            min-height: 297mm !important;
+            position: relative !important;
+          }
+
+          .report-card-container:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+          }
+          
+          /* Force Background Colors untuk Tabel */
+          .bg-gray-100 { background-color: #f3f4f6 !important; }
+          .bg-emerald-50 { background-color: #ecfdf5 !important; }
           
           .break-inside-avoid {
             page-break-inside: avoid;
           }
-          
-          /* Force Background Colors */
-          .bg-gray-100 { background-color: #f3f4f6 !important; }
-          .bg-emerald-50 { background-color: #ecfdf5 !important; }
         }
         
         @keyframes slideIn {
